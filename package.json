@@ -1,7 +1,8 @@
 {
   "name": "@nabs23/pdf-ocr-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A high-performance, parallelized PDF OCR tool using Tesseract.js WASM",
+
   "main": "index.js",
   "bin": {
     "pdf-ocr": "./index.js"

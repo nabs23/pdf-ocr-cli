@@ -1,13 +1,16 @@
 # pdf-ocr-cli
 
-A lightweight, zero-system-dependency (WASM-based) CLI tool to OCR PDF files. It generates both a searchable PDF and a structured plain text file.
+**pdf-ocr-cli** is a lightweight, zero-system-dependency CLI utility designed to bridge the gap between static scanned documents and searchable digital assets. 
 
-## Features
+Unlike traditional OCR tools that require complex system-level installations of Tesseract and its language data, this tool leverages **Tesseract.js (WebAssembly)** to run the OCR engine directly within the Node.js runtime. It features a parallelized processing pipeline that scales across multiple CPU cores, making it efficient for large documents (100+ pages).
 
-- **Zero System OCR Dependency**: Uses `tesseract.js` (WebAssembly), so you don't need to install Tesseract natively.
-- **Parallel Processing**: Utilizes multiple CPU cores for faster OCR.
-- **Progress Tracking**: Real-time progress bar for long documents.
-- **Searchable PDF**: Merges OCRed layers back into a standard PDF format.
+## Key Features
+
+- **Searchable PDF Generation**: Automatically merges OCR text layers back into a high-quality PDF.
+- **Parallel Execution**: Configurable worker pools to maximize hardware utilization.
+- **Zero-Config OCR**: No need for `tesseract-ocr` system binaries or manual language data management (WASM-based).
+- **Dual Output**: Generates both a `.txt` transcription and a searchable `_OCRed.pdf` simultaneously.
+- **Developer Friendly**: Built with Node.js, providing a clean CLI interface with real-time progress tracking.
 
 ## Prerequisites
 

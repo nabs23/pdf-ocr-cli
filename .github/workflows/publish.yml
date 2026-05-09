@@ -7,45 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
       - run: npm install
-      - name: Read package metadata
-        id: pkg
-        shell: bash
-        run: |
-          node -e 'const fs = require("fs"); const pkg = require("./package.json"); const output = process.env.GITHUB_OUTPUT; if (!output) { throw new Error("GITHUB_OUTPUT is not set"); } fs.appendFileSync(output, "name=" + pkg.name + "\n"); fs.appendFileSync(output, "version=" + pkg.version + "\n");'
-      - name: Validate release tag matches package version
-        run: |
-          tag="${{ github.event.release.tag_name }}"
-          pkg_version="${{ steps.pkg.outputs.version }}"
-
-          if [ "$tag" = "v$pkg_version" ] || [ "$tag" = "$pkg_version" ]; then
-            echo "Release tag ($tag) matches package version ($pkg_version)."
-            exit 0
-          fi
-
-          echo "Release tag ($tag) does not match package.json version ($pkg_version)."
-          echo "Create a new tag/release that matches the package version (for example: v$pkg_version)."
-          exit 1
-      - name: Check if version already exists on npm
-        id: npm_check
-        env:
-          PACKAGE_NAME: ${{ steps.pkg.outputs.name }}
-          PACKAGE_VERSION: ${{ steps.pkg.outputs.version }}
-        run: |
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version > /dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Version ${PACKAGE_VERSION} is already published for ${PACKAGE_NAME}; skipping publish."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Publish package to npm
-        run: npm publish --access public
-        if: steps.npm_check.outputs.exists == 'false'
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

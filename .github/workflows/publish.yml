@@ -18,7 +18,7 @@ jobs:
         id: pkg
         shell: bash
         run: |
-          node -e "const fs = require('fs'); const pkg = require('./package.json'); fs.appendFileSync(process.env.GITHUB_OUTPUT, `name=${pkg.name}\nversion=${pkg.version}\n`);"
+          node -e 'const fs = require("fs"); const pkg = require("./package.json"); const output = process.env.GITHUB_OUTPUT; if (!output) { throw new Error("GITHUB_OUTPUT is not set"); } fs.appendFileSync(output, "name=" + pkg.name + "\n"); fs.appendFileSync(output, "version=" + pkg.version + "\n");'
       - name: Validate release tag matches package version
         run: |
           tag="${{ github.event.release.tag_name }}"
@@ -34,10 +34,13 @@ jobs:
           exit 1
       - name: Check if version already exists on npm
         id: npm_check
+        env:
+          PACKAGE_NAME: ${{ steps.pkg.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.pkg.outputs.version }}
         run: |
-          if npm view "${{ steps.pkg.outputs.name }}@${{ steps.pkg.outputs.version }}" version > /dev/null 2>&1; then
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version > /dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Version ${{ steps.pkg.outputs.version }} is already published for ${{ steps.pkg.outputs.name }}; skipping publish."
+            echo "Version ${PACKAGE_VERSION} is already published for ${PACKAGE_NAME}; skipping publish."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi

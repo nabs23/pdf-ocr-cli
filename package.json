@@ -1,0 +1,35 @@
+{
+  "name": "@nabs/pdf-ocr-cli",
+  "version": "1.0.0",
+  "description": "A high-performance, parallelized PDF OCR tool using Tesseract.js WASM",
+  "main": "index.js",
+  "bin": {
+    "pdf-ocr": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ocr",
+    "pdf",
+    "tesseract",
+    "searchable-pdf",
+    "wasm",
+    "cli"
+  ],
+  "author": "nabs",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cli-progress": "^3.12.0",
+    "commander": "^13.1.0",
+    "tesseract.js": "^6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

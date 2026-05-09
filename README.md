@@ -39,4 +39,4 @@ pdf-ocr input.pdf
 
 ## License
 
-ISC
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.

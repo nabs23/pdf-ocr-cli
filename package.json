@@ -1,6 +1,6 @@
 {
   "name": "@nabs23/pdf-ocr-cli",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "A high-performance, parallelized PDF OCR tool using Tesseract.js WASM",
 
   "main": "index.js",
@@ -9,10 +9,20 @@
   },
   "files": [
     "index.js",
+    "ocr.js",
+    "gui-main.js",
+    "gui-preload.js",
+    "gui/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "start": "node index.js",
+    "gui": "electron gui-main.js",
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac --universal",
+    "dist:linux": "electron-builder --linux --publish never",
+    "dist:desktop": "npm run dist:win && npm run dist:mac && npm run dist:linux",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -30,6 +40,49 @@
     "cli-progress": "^3.12.0",
     "commander": "^13.1.0",
     "tesseract.js": "^6.0.0"
+  },
+  "devDependencies": {
+    "electron": "^37.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.nabs.pdfocr",
+    "productName": "PDF OCR",
+    "directories": {
+      "output": "dist"
+    },
+    "extraMetadata": {
+      "main": "gui-main.js"
+    },
+    "files": [
+      "gui/**/*",
+      "gui-main.js",
+      "gui-preload.js",
+      "ocr.js",
+      "index.js",
+      "eng.traineddata",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    }
   },
   "publishConfig": {
     "access": "public"

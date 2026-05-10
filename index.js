@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 
 const { Command } = require('commander');
-const Tesseract = require('tesseract.js');
-const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 const cliProgress = require('cli-progress');
+const { runOcr } = require('./ocr');
 
 const program = new Command();
 
@@ -19,79 +17,62 @@ program
   .option('-k, --keep', 'Keep temporary files', false)
   .action(async (input, options) => {
     const inputPath = path.resolve(input);
-    if (!fs.existsSync(inputPath)) {
-      console.error(`Error: File ${input} does not exist.`);
-      process.exit(1);
-    }
-
-    const outputPrefix = options.output || path.parse(input).name;
-    const numWorkers = parseInt(options.workers);
-    const tempDir = path.join(process.cwd(), `ocr_temp_${Date.now()}`);
-    const imgDir = path.join(tempDir, 'images');
-    const pdfDir = path.join(tempDir, 'pdfs');
+    const outputPrefix = options.output || path.parse(inputPath).name;
+    const numWorkers = parseInt(options.workers, 10);
+    let progressBar;
+    let progressStarted = false;
 
     try {
-      // 1. Setup
-      console.log(`[*] Initializing OCR for: ${input}`);
-      fs.mkdirSync(imgDir, { recursive: true });
-      fs.mkdirSync(pdfDir, { recursive: true });
+      const result = await runOcr({
+        input: inputPath,
+        outputPrefix,
+        workers: numWorkers,
+        keep: options.keep,
+        onProgress: (event) => {
+          if (event.stage === 'setup') {
+            console.log(`[*] ${event.message}`);
+            return;
+          }
 
-      // 2. Convert PDF to Images
-      console.log(`[*] Converting PDF to images (this may take a while)...`);
-      execSync(`pdftoppm -jpeg -r 300 "${inputPath}" "${path.join(imgDir, 'page')}"`);
-      const images = fs.readdirSync(imgDir).filter(f => f.endsWith('.jpg')).sort();
-      const totalPages = images.length;
-      console.log(`[*] Found ${totalPages} pages.`);
+          if (event.stage === 'convert') {
+            if (typeof event.totalPages === 'number') {
+              console.log(`[*] Found ${event.totalPages} pages.`);
+              progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+              progressBar.start(event.totalPages, 0);
+              progressStarted = true;
+            } else {
+              console.log(`[*] ${event.message}`);
+            }
+            return;
+          }
 
-      // 3. Setup OCR
-      const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-      progressBar.start(totalPages, 0);
+          if (event.stage === 'ocr' && progressStarted) {
+            progressBar.update(event.completedPages);
+            return;
+          }
 
-      const scheduler = Tesseract.createScheduler();
-      for (let i = 0; i < numWorkers; i++) {
-        const worker = await Tesseract.createWorker('eng', 1);
-        scheduler.addWorker(worker);
-      }
-
-      const results = new Array(totalPages);
-      const tasks = images.map((imgName, index) => {
-        const filePath = path.join(imgDir, imgName);
-        const pageNum = index + 1;
-        const paddedNum = pageNum.toString().padStart(3, '0');
-        const pdfPath = path.join(pdfDir, `page-${paddedNum}.pdf`);
-
-        return scheduler.addJob('recognize', filePath, { pdfTitle: `Page ${pageNum}` }, { pdf: true })
-          .then(res => {
-            results[index] = res.data.text;
-            fs.writeFileSync(pdfPath, Buffer.from(res.data.pdf));
-            progressBar.update(index + 1);
-          });
+          if (event.stage === 'finalize') {
+            if (progressStarted) {
+              progressBar.stop();
+              progressStarted = false;
+            }
+            console.log(`[*] ${event.message}`);
+          }
+        },
       });
 
-      await Promise.all(tasks);
-      progressBar.stop();
-      await scheduler.terminate();
-
-      // 4. Combine Results
-      console.log(`[*] Finalizing output files...`);
-      
-      // Save Text
-      const fullText = results.map((text, i) => `--- Page ${i + 1} ---\n${text}\n\n`).join('');
-      fs.writeFileSync(`${outputPrefix}.txt`, fullText);
-
-      // Merge PDFs
-      execSync(`gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile="${outputPrefix}_OCRed.pdf" "${pdfDir}/page-"*.pdf`);
-
       console.log(`[+] Success! Created:`);
-      console.log(`    - ${outputPrefix}.txt`);
-      console.log(`    - ${outputPrefix}_OCRed.pdf`);
+      console.log(`    - ${result.txtOutput}`);
+      console.log(`    - ${result.pdfOutput}`);
 
     } catch (err) {
+      if (progressStarted) {
+        progressBar.stop();
+      }
       console.error(`\n[!] Error during OCR:`, err.message);
     } finally {
-      if (!options.keep && fs.existsSync(tempDir)) {
+      if (!options.keep) {
         console.log(`[*] Cleaning up temporary files...`);
-        fs.rmSync(tempDir, { recursive: true, force: true });
       }
     }
   });

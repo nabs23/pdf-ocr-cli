@@ -1,2 +1,38 @@
-# dist folder
+# Dependencies
+node_modules/
+
+# Build output
 dist/
+release/
+out/
+
+# Electron builder artifacts
+*.AppImage
+*.dmg
+*.deb
+*.exe
+*.blockmap
+latest.yml
+
+# OCR temp files
+ocr_temp_*/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+
+# Environment
+.env
+.env.*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
